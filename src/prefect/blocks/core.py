@@ -1764,7 +1764,8 @@ class Block(BaseModel, ABC):
                 block_document_update = BlockDocumentUpdate(
                     **self._to_block_document(
                         name=name, include_secrets=True
-                    ).model_dump(include={"block_schema_id", "data"})
+                    ).model_dump(include={"block_schema_id", "data"}),
+                    merge_existing_data=False,
                 )
                 await client.update_block_document(
                     block_document_id=block_document_id,
@@ -1859,7 +1860,8 @@ class Block(BaseModel, ABC):
                     block_document_update = BlockDocumentUpdate(
                         **self._to_block_document(
                             name=name, include_secrets=True
-                        ).model_dump(include={"block_schema_id", "data"})
+                        ).model_dump(include={"block_schema_id", "data"}),
+                        merge_existing_data=False,
                     )
                     sync_client.update_block_document(
                         block_document_id=block_document_id,
