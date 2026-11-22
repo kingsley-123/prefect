@@ -3080,6 +3080,39 @@ class TestBlockSchemaMigration:
         # new local schema ID should now be saved to Prefect
         assert updated_schema_id == new_schema_id
 
+    async def test_overwrite_removes_stale_fields(self, prefect_client):
+        """Overwriting a block with a narrower schema should not retain removed fields."""
+
+        class MyBlock(Block):
+            _block_type_name = "my-stale-test-block"
+            _block_type_slug = "my-stale-test-block"
+            setting_1: str = "foo"
+
+        block_name = f"test-{uuid4()}"
+        blk1 = MyBlock(setting_1="bar")
+        await blk1.save(block_name)
+
+        with pytest.warns(
+            UserWarning, match="matches existing registered type 'MyBlock'"
+        ):
+
+            class MyBlock2(Block):
+                _block_type_name = "my-stale-test-block"
+                _block_type_slug = "my-stale-test-block"
+                setting_2: float = 1.0
+
+        blk2 = MyBlock2(setting_2=0.5)
+        await blk2.save(block_name, overwrite=True)
+
+        saved = await prefect_client.read_block_document_by_name(
+            name=block_name, block_type_slug="my-stale-test-block"
+        )
+
+        assert "setting_2" in saved.data
+        assert "setting_1" not in saved.data, (
+            "Stale field 'setting_1' should have been removed on overwrite"
+        )
+
 
 @pytest.mark.clear_db
 class TestDeleteBlock:
